@@ -10,7 +10,8 @@ function generateToken(payload) {
 
 // Middleware to verify a JWT token
 function verifyToken(req, res, next) {
-    const token = req.token;
+    // const token = req.token;
+    const token = req.cookies.tokenz;
     if (!token) {
         return res.status(403).send({ message: 'No token provided.' });
     }
@@ -21,6 +22,7 @@ function verifyToken(req, res, next) {
             return res.status(500).send({ message: 'Failed to authenticate token.' });
         }
         console.log("Decoded Token: " + JSON.stringify(decoded));
+        req.decoded = decoded;
         next();
     });
 }

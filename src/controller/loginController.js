@@ -9,6 +9,7 @@ const loginUser = (req, res) => {
 
     if(userData.email == 'admin@example.com' && userData.password == 'admin123'){
         const token = auth.generateToken(userData);
+        res.cookie('tokenz', token, { httpOnly: true, secure: true, sameSite: 'Strict' }); // Set the token in a cookie
         return res.status(200).json({ message: 'login success', token });
     }else{
         return res.status(401).json({ message: 'invalid email or password' });

@@ -2,6 +2,7 @@ const express = require('express'); // Import Express
 const app = express(); // Create Express
 const port = 4000; // Port
 const bearerToken = require("express-bearer-token"); // Import Bearer Token
+const cookieParser = require('cookie-parser'); // Import Cookie Parser
 
 //Middleware Import
 const middlewarelog = require('./middleware/log'); // Import middleware log
@@ -14,6 +15,7 @@ const siswaRoutes = require('./routes/siswaRoutes'); // Import siswaRoutes
 
 app.use(express.json()); // Body parser
 app.use(bearerToken()); // Bearer Token
+app.use(cookieParser()); // Cookie Parser
 
 //Middleware
 app.use(middlewarelog); 
