@@ -1,4 +1,5 @@
 const db = require('../config/database'); // Assuming you have a db configuration file
+const transporter = require('../config/nodemailer'); // Assuming you have a nodemailer configuration file
 
 const getAllSiswa = (req, res) => {
     const query = 'SELECT * FROM siswa';
@@ -56,17 +57,46 @@ const bulkCreateSiswa = (req, res) => {
     const query = 'INSERT INTO siswa (nama, tanggal_lahir, daerah, sekolah, modified_date) VALUES ?';
     const values = siswaData.map(siswa => [
         siswa.nama,
-        new Date(siswa.tanggal_lahir).toISOString().split('T')[0], // Format the date to YYYY-MM-DD,
+        new Date(siswa.tanggal_lahir).toISOString().split('T')[0], // Format the date to YYYY-MM-DD
         siswa.daerah,
         siswa.sekolah,
-        new Date() // current datetime for modified_date
+        new Date() // Current datetime for modified_date
     ]);
 
-    db.query(query, [values], (err, results) => {
+    db.beginTransaction(err => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.status(201).json({ message: 'Siswa data created successfully', affectedRows: results.affectedRows });
+
+        db.query(query, [values], (err, results) => {
+            if (err) {
+                return db.rollback(() => {
+                    res.status(500).json({ error: err.message });
+                });
+            }
+            transporter.transporternm.sendMail({
+                from: transporter.mailOptions.from,
+                to: 'recipient@example.com',
+                subject: 'Siswa Data Creation Notification',
+                text: `${siswaData.length} siswa data created successfully.`
+            }, (err, info) => {
+                if (err) {
+                    return db.rollback(() => {
+                        res.status(500).json({ error: "Err Email " + err.message });
+                    });
+                }
+                console.log('Email sent');
+
+                db.commit(err => {
+                    if (err) {
+                        return db.rollback(() => {
+                            res.status(500).json({ error: err.message });
+                        });
+                    }
+                    res.status(201).json({ message: 'Siswa data created successfully', affectedRows: results.affectedRows });
+                });
+            });
+        });
     });
 };
 

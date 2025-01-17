@@ -3,6 +3,7 @@ const router = express.Router();
 const userSQLController = require('../controller/userSQLController');
 
 
+
 // Route to get all users
 router.get('/', userSQLController.getAllUsers);
 

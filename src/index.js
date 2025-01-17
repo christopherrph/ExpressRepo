@@ -1,6 +1,7 @@
 const express = require('express'); // Import Express
 const app = express(); // Create Express
 const port = 4000; // Port
+const bearerToken = require("express-bearer-token"); // Import Bearer Token
 
 //Middleware Import
 const middlewarelog = require('./middleware/log'); // Import middleware log
@@ -12,6 +13,7 @@ const siswaRoutes = require('./routes/siswaRoutes'); // Import siswaRoutes
 
 
 app.use(express.json()); // Body parser
+app.use(bearerToken()); // Bearer Token
 
 //Middleware
 app.use(middlewarelog); 
@@ -20,6 +22,7 @@ app.use(middlewarelog);
 app.use('/users', usersroutes);
 app.use('/usersSQL', userSQLroutes);
 app.use('/siswa', siswaRoutes);
+app.use('/login', require('./routes/loginRoutes'));
 
 //Server
 app.listen(port, () =>{
