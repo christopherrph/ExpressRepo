@@ -3,7 +3,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'expressjs'
+  database: 'expressnode'
 });
 
 module.exports = db;

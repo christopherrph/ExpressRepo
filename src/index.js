@@ -7,10 +7,16 @@ const cookieParser = require('cookie-parser'); // Import Cookie Parser
 //Middleware Import
 const middlewarelog = require('./middleware/log'); // Import middleware log
 
+//Cron Jobs Import
+const scheduleCronJobs = require('./cron/cronManager'); // Import scheduleCronJobs
+
 //Routes Import
 const usersroutes = require('./routes/userRoutes'); // Import userRoutes
 const userSQLroutes = require('./routes/userSQLRoutes'); // Import userSQLRoutes
 const siswaRoutes = require('./routes/siswaRoutes'); // Import siswaRoutes
+
+// Import Import
+// ---------------------------------------------------------------------------------------
 
 
 app.use(express.json()); // Body parser
@@ -19,6 +25,10 @@ app.use(cookieParser()); // Cookie Parser
 
 //Middleware
 app.use(middlewarelog); 
+
+//Cron Jobs
+scheduleCronJobs.startCronJobs();
+
 
 //Routes
 app.use('/users', usersroutes);

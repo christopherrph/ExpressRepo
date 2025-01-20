@@ -1,6 +1,20 @@
 const db = require('../config/database'); // Assuming you have a db configuration file
 const transporter = require('../config/nodemailer'); // Assuming you have a nodemailer configuration file
 
+
+const timerUnfeedAllSiswa = (req, res) => {
+    const query = 'UPDATE siswa SET isUdaMakan = ?, modified_date = ?';
+    const values = [false, new Date()];
+    db.query(query, values, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        console.log('All siswa unfeed successfully');
+        res.status(200).json({ message: 'All siswa unfeed successfully', affectedRows: results.affectedRows });
+    });
+}
+
+
 const getAllSiswa = (req, res) => {
     const query = 'SELECT * FROM siswa';
     db.query(query, (err, results) => {
@@ -152,4 +166,6 @@ const deleteAllSiswa = (req, res) => {
     });
 };
 
-module.exports = { getAllSiswa, bulkCreateSiswa, deleteAllSiswa, getSiswaById, getSiswaByDaerah, feedSiswa, unfeedSiswa };
+module.exports = { getAllSiswa, bulkCreateSiswa, 
+    deleteAllSiswa, getSiswaById, getSiswaByDaerah,
+    feedSiswa, unfeedSiswa, timerUnfeedAllSiswa };
