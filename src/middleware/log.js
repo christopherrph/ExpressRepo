@@ -1,7 +1,7 @@
 let numofreq = 1;
 
 const logrequest = (req, res, next) =>{
-    console.log(`log request ${numofreq}`);
+    console.log(`Request no. ${numofreq} - ${req.method}`);
     numofreq++;
     next();
 }
