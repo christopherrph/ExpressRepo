@@ -166,6 +166,26 @@ const deleteAllSiswa = (req, res) => {
     });
 };
 
+const createSiswa = (req, res) => {
+    const { nama, tanggal_lahir, daerah, sekolah } = req.body;
+    let profilePictureUrl = null;
+
+    if (req.file) {
+        profilePictureUrl = `/mediaupload/${req.file.filename}`;
+    }
+    
+    const query = 'INSERT INTO siswa (nama, tanggal_lahir, daerah, sekolah, pasfoto_url, modified_date) VALUES (?, ?, ?, ?, ?, ?)';
+    const values = [nama, new Date(tanggal_lahir).toISOString().split('T')[0], daerah, sekolah, profilePictureUrl, new Date()];
+
+    db.query(query, values, (err, results) => {
+        if (err) {
+            console.error('Error creating siswa:', err);
+            return res.status(500).json({ error: 'Failed to create siswa' });
+        }
+        res.status(201).json({ message: 'Siswa created successfully', id: results.insertId });
+    });
+};
+
 module.exports = { getAllSiswa, bulkCreateSiswa, 
     deleteAllSiswa, getSiswaById, getSiswaByDaerah,
-    feedSiswa, unfeedSiswa, timerUnfeedAllSiswa };
+    feedSiswa, unfeedSiswa, timerUnfeedAllSiswa, createSiswa };
