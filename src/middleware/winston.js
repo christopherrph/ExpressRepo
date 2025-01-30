@@ -1,17 +1,23 @@
+// logger.js
 const winston = require('winston');
 
+// Define log format
+const logFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.printf(({ timestamp, level, message }) => {
+    return `Winston: ${timestamp} [${level.toUpperCase()}]: ${message}`;
+  })
+);
+
+// Create a Winston logger
 const logger = winston.createLogger({
-  level: 'info', // Logging level (e.g., 'error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly')
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => {
-      return `${timestamp} [${level.toUpperCase()}]: ${message}`;
-    })
-  ),
+  level: 'info', // Set the default logging level
+  format: logFormat,
   transports: [
-    new winston.transports.Console(), // Log to the console
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }), // Log errors to a file
-    new winston.transports.File({ filename: 'logs/combined.log' }) // Log all messages to a combined file
+    // Log to the console
+    new winston.transports.Console(),
+    // Log to a file
+    new winston.transports.File({ filename: 'logs/app.log' }),
   ],
 });
 
