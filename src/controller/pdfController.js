@@ -2,6 +2,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 const { PDFDocument } = require('pdf-lib');
+const archiver = require('archiver');
 
 // Configure Multer storage
 const storage = multer.diskStorage({
@@ -61,7 +62,7 @@ const splitPdf = async (req, res) => {
         return res.status(400).json({ error: 'Invalid input: filename and pages are required' });
     }
 
-    const filepath = path.join(__dirname, '../mediaupload/', filename);
+    const filepath = path.join(__dirname, '../mediaupload/', filename); // Get the full path to the uploaded PDF
 
     try {
         const existingPdfBytes = fs.readFileSync(filepath);
@@ -80,19 +81,42 @@ const splitPdf = async (req, res) => {
             }
         }
 
+        const zipFileName = `${Math.floor(10000 + Math.random() * 90000)}-split-${filename}.zip`;
+        const zipFilePath = path.join(__dirname, '../mediaupload/', zipFileName);
+        const output = fs.createWriteStream(zipFilePath);
+        const archive = archiver('zip', { zlib: { level: 9 } }); // Compression level
+
+        output.on('error', (err) => { throw err; });
+        archive.on('error', (err) => { throw err; });
+
+        archive.pipe(output); // Pipe the zip archive to the output stream
+
         // Process each page range concurrently
         await Promise.all(pages.map(async (page) => {
             const [start, end] = page.page_numbers.split('-').map(Number);
-            const newPdfDoc = await PDFDocument.create();
+            const newPdfDoc = await PDFDocument.create(); // Create a new empty PDF document for each page range
             const copiedPages = await newPdfDoc.copyPages(pdfDoc, Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i));
             copiedPages.forEach((copiedPage) => newPdfDoc.addPage(copiedPage));
 
             const newPdfBytes = await newPdfDoc.save();
             const newFilename = `${Date.now()}-${page.content.replace(/\s+/g, '_')}.pdf`;
-            fs.writeFileSync(path.join(__dirname, '../mediaupload/', newFilename), newPdfBytes);
+            // fs.writeFileSync(path.join(__dirname, '../mediaupload/', newFilename), newPdfBytes);
+            const pdfBuffer = Buffer.from(newPdfBytes); // Convert to Buffer if needed
+            archive.append(pdfBuffer, { name: newFilename }); // Add to zip without saving to disk first
         }));
 
-        res.status(200).json({ message: 'PDF split successfully' });
+        await archive.finalize(); // Important: Finalize the zip archive
+        output.on('close', () => {
+            res.download(zipFilePath, zipFileName, (err) => {
+            if (err) {
+                console.error('Error downloading zip file:', err); // Log the error for debugging
+                res.status(500).json({ error: 'Failed to download zip file' });
+            } else {
+                // Optionally, delete the zip file after download
+                fs.unlinkSync(zipFilePath);
+            }
+            });
+        });
     } catch (err) {
         console.error('Error splitting PDF:', err); // Log the error for debugging
         res.status(500).json({ error: 'Failed to split PDF' });
