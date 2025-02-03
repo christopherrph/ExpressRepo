@@ -70,6 +70,7 @@ const splitPdf = async (req, res) => {
         const totalPages = pdfDoc.getPageCount();
 
         // Validate all page ranges
+        const processedPages = new Set();
         for (const page of pages) {
             if (!page.page_numbers || typeof page.page_numbers !== 'string') {
                 return res.status(400).json({ error: 'Invalid page range format' });
@@ -78,6 +79,10 @@ const splitPdf = async (req, res) => {
             const [start, end] = page.page_numbers.split('-').map(Number);
             if (start < 1 || end > totalPages || start > end) {
                 return res.status(400).json({ error: `Invalid page range: ${page.page_numbers}` });
+            }
+
+            for (let i = start; i <= end; i++) {
+                processedPages.add(i);
             }
         }
 
@@ -104,6 +109,23 @@ const splitPdf = async (req, res) => {
             const pdfBuffer = Buffer.from(newPdfBytes); // Convert to Buffer if needed
             archive.append(pdfBuffer, { name: newFilename }); // Add to zip without saving to disk first
         }));
+
+        // Handle "others" PDF (pages not in defined ranges)
+        const othersPdfDoc = await PDFDocument.create();
+        const othersPages = [];
+        for (let i = 1; i <= totalPages; i++) {
+            if (!processedPages.has(i)) {
+                othersPages.push(i - 1); // PDFDocument indexes from 0
+            }
+        }
+
+        if (othersPages.length > 0) {
+            const copiedOthersPages = await othersPdfDoc.copyPages(pdfDoc, othersPages);
+            copiedOthersPages.forEach((copiedPage) => othersPdfDoc.addPage(copiedPage));
+            const othersPdfBytes = await othersPdfDoc.save();
+            const othersPdfBuffer = Buffer.from(othersPdfBytes);
+            archive.append(othersPdfBuffer, { name: `${Date.now()}-Others.pdf` });
+        }
 
         await archive.finalize(); // Important: Finalize the zip archive
         output.on('close', () => {
